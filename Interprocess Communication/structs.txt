@@ -1,0 +1,59 @@
+       #include <sys/socket.h>
+       int getpeername(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+
+       #include <netdb.h>
+       struct hostent *gethostbyname(const char *name);
+
+           struct hostent {
+               char  *h_name;            /* official name of host */
+               char **h_aliases;         /* alias list */
+               int    h_addrtype;        /* host address type */
+               int    h_length;          /* length of address */
+               char **h_addr_list;       /* list of addresses */
+           }
+           #define h_addr h_addr_list[0] /* for backward compatibility */
+
+       #include <netdb.h>
+       struct servent *getservbyname(const char *name, const char *proto);
+
+           struct servent {
+               char  *s_name;       /* official service name */
+               char **s_aliases;    /* alias list */
+               int    s_port;       /* port number */
+               char  *s_proto;      /* protocol to use */
+           }
+
+       #include <netdb.h>
+       struct protoent *getprotobyname(const char *name);
+
+           struct protoent {
+               char  *p_name;       /* official protocol name */
+               char **p_aliases;    /* alias list */
+               int    p_proto;      /* protocol number */
+           }
+
+
+       #include <sys/types.h>
+       #include <sys/socket.h>
+       #include <netdb.h>
+
+       int getaddrinfo(const char *node, const char *service,
+                       const struct addrinfo *hints,
+                       struct addrinfo **res);
+
+       void freeaddrinfo(struct addrinfo *res);
+
+           struct addrinfo {
+               int              ai_flags;
+               int              ai_family;
+               int              ai_socktype;
+               int              ai_protocol;
+               size_t           ai_addrlen;
+               struct sockaddr *ai_addr;
+               char            *ai_canonname;
+               struct addrinfo *ai_next;
+           };
+
+
+
+

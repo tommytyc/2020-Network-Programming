@@ -1,0 +1,71 @@
+// TCP echo5 server
+
+int     TCPechod(int fd)
+{
+        char    buf[BUFSIZ];
+        int     cc;
+
+        while (cc = read(fd, buf, sizeof buf)) {
+                if (cc < 0)
+                        errexit("echo read: %s\n", strerror(cc));
+            int i;
+            for (i=0; i<5; i++){
+                if (errno=write(fd, buf, cc) < 0)
+                        errexit("echo write: %s\n", strerror(errno));
+            }
+        }
+        return 0;
+}
+
+// TCP echo5 client
+
+int     TCPecho(const char *host, const char *service)
+{
+        char    buf[LINELEN+1];         /* buffer for one line of text  */
+        int     s, n;                   /* socket descriptor, read count*/
+        int     outchars, inchars;      /* characters sent and received */
+
+        s = connectTCP(host, service);
+
+        while (fgets(buf, sizeof(buf), stdin)) {
+                if (strlen(buf) == 1) break; /* termination trigger */
+                buf[LINELEN] = '\0';    /* insure line null-terminated  */
+                outchars = strlen(buf);
+                (void) write(s, buf, outchars);
+
+                /* read it back */
+            int i;
+            for (i=0;i<5;i++){
+                for (inchars = 0; inchars < outchars; inchars+=n ) {
+                        n = read(s, &buf[inchars], outchars - inchars);
+                        if (n < 0)
+                                errexit("socket read failed: %s\n",
+                                        strerror(errno));
+                }
+                printf("Echo:%d: ", i);
+                fputs(buf, stdout);
+            }
+        }
+}
+
+// TCP echo5x client
+
+int     TCPecho(const char *host, const char *service)
+{
+        char    buf[LINELEN+1];         /* buffer for one line of text  */
+        int     s, n;                   /* socket descriptor, read count*/
+        int     outchars, inchars;      /* characters sent and received */
+
+        s = connectTCP(host, service);
+
+        while (fgets(buf, sizeof(buf), stdin)) {
+                if (strlen(buf) == 1) break; /* termination trigger */
+                buf[LINELEN] = '\0';    /* insure line null-terminated  */
+                outchars = strlen(buf);
+                (void) write(s, buf, outchars);
+
+                n = read(s, buf, LINELEN);
+                printf("Echo:%d: ", n);
+                fputs(buf, stdout);
+        }
+}

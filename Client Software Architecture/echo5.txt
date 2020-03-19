@@ -1,0 +1,52 @@
+//  UDP echo5 server:
+
+           for (;;) {
+               peer_addr_len = sizeof(struct sockaddr_storage);
+               nread = recvfrom(sfd, buf, BUF_SIZE, 0,
+                       (struct sockaddr *) &peer_addr, &peer_addr_len);
+               if (nread == -1)
+                   continue;               /* Ignore failed request */
+               buf[nread] = '\0';
+               char host[NI_MAXHOST], service[NI_MAXSERV];
+
+               s = getnameinfo((struct sockaddr *) &peer_addr,
+                               peer_addr_len, host, NI_MAXHOST,
+                               service, NI_MAXSERV, NI_NUMERICSERV);
+              if (s == 0)
+                   printf("Received %ld bytes from %s:%s, %s\n",
+                           (long) nread, host, service, buf);
+               else
+                   fprintf(stderr, "getnameinfo: %s\n", gai_strerror(s));
+
+            int i;
+            for (i=0; i<5;i++){
+               if (sendto(sfd, buf, nread, 0,
+                           (struct sockaddr *) &peer_addr,
+                           peer_addr_len) != nread)
+                   fprintf(stderr, "Error sending response\n");
+            }
+           }
+       }
+
+
+// UDP echo5 client:
+
+        while (fgets(buf, sizeof(buf), stdin)) {
+                len = strlen(buf);
+                if (len == 1) exit(0);
+                if(nchars=sendto(sfd, buf, len, 0, (struct sockaddr *)&server_addr, server_addrlen)!=len){
+                         printf("partial/failed write:%d\n", (int)nchars);
+                         exit(EXIT_FAILURE);
+                };
+            int i;
+            for (i=0; i<5; i++){
+                nread = recvfrom(sfd, buf, BUF_SIZE, 0, (struct sockaddr *)&server_addr, &server_addrlen);
+                if (nread < 0){
+                        printf("read error\n");
+                        exit(EXIT_FAILURE);
+                };
+                printf("Received from %s:%d, %d bytes\nECHO:%d: %s\n", inet_ntoa(server_addr.sin_addr), ntohs(server_addr.sin_port), (int) nread, i, buf);
+            }
+        }
+        exit(EXIT_SUCCESS);
+}

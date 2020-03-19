@@ -1,0 +1,70 @@
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdarg.h>
+
+#ifndef INADDR_NONE
+#define INADDR_NONE     0xffffffff
+#endif
+
+#define BUF_SIZE 500
+
+int     main(int argc, char *argv[]){
+        struct sockaddr_in server_addr;
+        int sfd, j;
+        socklen_t server_addrlen;
+        size_t len;
+        ssize_t nread, nchars;
+        char buf[BUF_SIZE];
+        struct hostent  *phe;
+        struct servent  *pse;
+        struct protoent *ppe;
+
+        memset(&server_addr, 0, sizeof(server_addr));
+        server_addr.sin_family = AF_INET;
+
+        if (phe = gethostbyname(argv[1]))
+                memcpy(&server_addr.sin_addr, phe->h_addr, phe->h_length);
+        else if ( (server_addr.sin_addr.s_addr = inet_addr(argv[1])) == INADDR_NONE){
+                printf("can't get %s host entry\n", argv[1]);
+                exit(-1);
+        };
+
+        if ((server_addr.sin_port = htons((unsigned short)atoi(argv[2]))) == 0){
+                printf("can't get %s service entry\n", argv[2]);
+                exit(-1);
+        };
+
+        if ((ppe = getprotobyname("udp")) == 0){
+                printf("can't get UDP protocol entry\n");
+                exit(-1);
+        };
+
+        while ((sfd=socket(PF_INET, SOCK_DGRAM, ppe->p_proto)) < 0){
+                close(sfd);
+        };
+
+        server_addrlen = sizeof(server_addr);
+
+        while (fgets(buf, sizeof(buf), stdin)) {
+                len = strlen(buf);
+                if (len == 1) exit(0);
+                if(nchars=sendto(sfd, buf, len, 0, (struct sockaddr *)&server_addr, server_addrlen)!=len){
+                         printf("partial/failed write:%d\n", (int)nchars);
+                         exit(EXIT_FAILURE);
+                };
+                nread = recvfrom(sfd, buf, BUF_SIZE, 0, (struct sockaddr *)&server_addr, &server_addrlen);
+                if (nread < 0){
+                        printf("read error\n");
+                        exit(EXIT_FAILURE);
+                };
+                printf("Received from %s:%d, %d bytes: %s\n", inet_ntoa(server_addr.sin_addr), ntohs(server_addr.sin_port), (int) nread, buf);
+        }
+        exit(EXIT_SUCCESS);
+}

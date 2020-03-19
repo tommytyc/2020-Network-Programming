@@ -1,0 +1,40 @@
+(linux1:~/np) smyuan% ./netaddr 140.113.40.35
+host IP:2356226083
+host IP in dotted decimal:140.113.40.35
+host IP:2356226083
+host IP in dotted decimal:140.113.40.35
+(linux1:~/np) smyuan% ./netaddr 140.113.40.36
+host IP:2356226084
+host IP in dotted decimal:140.113.40.36
+host IP:2356226084
+host IP in dotted decimal:140.113.40.36
+(linux1:~/np) smyuan% cat net_addr.c
+       #include <sys/socket.h>
+       #include <netinet/in.h>
+       #include <arpa/inet.h>
+       #include <stdio.h>
+       #include <stdlib.h>
+
+       int
+       main(int argc, char *argv[])
+       {
+           struct in_addr addr;
+
+           if (argc != 2) {
+               fprintf(stderr, "%s <dotted-address>\n", argv[0]);
+               exit(-1);
+           }
+
+           if (inet_aton(argv[1], &addr) == 0) {
+               perror("inet_aton");
+               exit(EXIT_FAILURE);
+           }
+           printf("host IP:%ld\n", (long int)ntohl(addr.s_addr));
+           printf("host IP in dotted decimal:%s\n", inet_ntoa(addr));
+           addr.s_addr = inet_addr(argv[1]);
+           printf("host IP:%ld\n", (long int)ntohl(addr.s_addr));
+           printf("host IP in dotted decimal:%s\n", inet_ntoa(addr));
+           exit(0);
+       }
+
+(linux1:~/np) smyuan%

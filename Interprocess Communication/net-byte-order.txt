@@ -1,0 +1,61 @@
+#include        <stdio.h>
+#include        <arpa/inet.h>
+
+int     main() {
+        short int       i, j, n;
+        long int        k, l, m;
+
+        for (i=0; i<20; i++){
+                j = htons(i);
+                n = ntohs(j);
+                printf("host short:%d, network short:%d, h2n2h short:%d\n", i, j, n);
+        }
+        for (k=0; k<20; k++) {
+                l = htonl(k);
+                m = ntohl(l);
+                printf("host long:%ld, network long:%ld, h2n2h long:%ld\n", k, l, m);
+        }
+}
+
+
+host short:0, network short:0, h2n2h short:0
+host short:1, network short:256, h2n2h short:1
+host short:2, network short:512, h2n2h short:2
+host short:3, network short:768, h2n2h short:3
+host short:4, network short:1024, h2n2h short:4
+host short:5, network short:1280, h2n2h short:5
+host short:6, network short:1536, h2n2h short:6
+host short:7, network short:1792, h2n2h short:7
+host short:8, network short:2048, h2n2h short:8
+host short:9, network short:2304, h2n2h short:9
+host short:10, network short:2560, h2n2h short:10
+host short:11, network short:2816, h2n2h short:11
+host short:12, network short:3072, h2n2h short:12
+host short:13, network short:3328, h2n2h short:13
+host short:14, network short:3584, h2n2h short:14
+host short:15, network short:3840, h2n2h short:15
+host short:16, network short:4096, h2n2h short:16
+host short:17, network short:4352, h2n2h short:17
+host short:18, network short:4608, h2n2h short:18
+host short:19, network short:4864, h2n2h short:19
+host long:0, network long:0, h2n2h long:0
+host long:1, network long:16777216, h2n2h long:1
+host long:2, network long:33554432, h2n2h long:2
+host long:3, network long:50331648, h2n2h long:3
+host long:4, network long:67108864, h2n2h long:4
+host long:5, network long:83886080, h2n2h long:5
+host long:6, network long:100663296, h2n2h long:6
+host long:7, network long:117440512, h2n2h long:7
+host long:8, network long:134217728, h2n2h long:8
+host long:9, network long:150994944, h2n2h long:9
+host long:10, network long:167772160, h2n2h long:10
+host long:11, network long:184549376, h2n2h long:11
+host long:12, network long:201326592, h2n2h long:12
+host long:13, network long:218103808, h2n2h long:13
+host long:14, network long:234881024, h2n2h long:14
+host long:15, network long:251658240, h2n2h long:15
+host long:16, network long:268435456, h2n2h long:16
+host long:17, network long:285212672, h2n2h long:17
+host long:18, network long:301989888, h2n2h long:18
+host long:19, network long:318767104, h2n2h long:19
+(linux1:~) smyuan%
