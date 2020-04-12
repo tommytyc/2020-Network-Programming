@@ -6,8 +6,8 @@ import sys
 
 global HOST
 global PORT
-HOST = sys.argv[1]
-PORT = int(sys.argv[2])
+HOST = '127.0.0.1'
+PORT = int(sys.argv[1])
 
 class UserInfo():
 	def __init__(self, name, email, password):
@@ -76,7 +76,7 @@ def BBS_handle(conn):
 						if cmd[2] == User[cmd[1]].password:
 							login_status = True
 							login_user = cmd[1]
-							msg = 'Welcome, ' + cmd[1] + '\n'
+							msg = 'Welcome, ' + cmd[1] + '.\n'
 						else:
 							msg = 'Login failed.\n'
 					else:
@@ -99,7 +99,7 @@ def BBS_handle(conn):
 				if login_status == False:
 					msg = 'Please login first.\n'
 				else:
-					msg = 'Bye, ' + login_user + '\n'
+					msg = 'Bye, ' + login_user + '.\n'
 					login_user = None
 					login_status = False
 			conn.sendall(msg.encode())
