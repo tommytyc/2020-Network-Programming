@@ -17,8 +17,6 @@ class UserInfo():
 		self.email = email
 		self.password = password
 
-User = dict()
-
 conn_pool = []
 
 def Init():
@@ -51,13 +49,17 @@ def HandleClient():
 def CheckUserExist(name):
 	cursor.execute(""" select * from user where name = ? """, (name,))
 	tmp = cursor.fetchall()
-	if tmp != ():
+	if tmp != []:
 		return True
 	else:
 		return False
 
 def CreateUser(name, email, passwd):
-	cursor.execute(""" insert into user(name, email, password) values(?, ?, ?) """, (name, email, passwd))
+	cursor.execute(" insert into user(name, email, password) values(?, ?, ?) ", (name, email, passwd))
+
+def GetUser(name):
+	cursor.execute(" select * from user where name = ? ", (name,))
+	return cursor.fetchone()
 
 def HandleCommand(conn, cmd, login_status, login_user):
 	msg = None
@@ -83,7 +85,8 @@ def HandleCommand(conn, cmd, login_status, login_user):
 				msg = 'Please logout first.\n'
 			else: 
 				if CheckUserExist(cmd[1]):
-					if cmd[2] == User[cmd[1]].password:
+					user = GetUser(cmd[1])
+					if cmd[2] == user[2]:
 						login_status = True
 						login_user = cmd[1]
 						msg = 'Welcome, ' + cmd[1] + '.\n'
@@ -157,4 +160,5 @@ if __name__ == "__main__":
 		cmd = input()
 		if cmd == 'exit':
 			break
+	dbconn.close()
 	os.remove(str(os.getcwd() + '/db.sqlite'))
