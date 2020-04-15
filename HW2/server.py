@@ -11,12 +11,6 @@ global PORT
 HOST = '127.0.0.1'
 PORT = int(sys.argv[1])
 
-class UserInfo():
-	def __init__(self, name, email, password):
-		self.name = name
-		self.email = email
-		self.password = password
-
 conn_pool = []
 
 def Init():
@@ -26,6 +20,7 @@ def Init():
 	server.listen(10)
 	dbconn = sqlite3.connect('db.sqlite', check_same_thread = False)
 	cursor = dbconn.cursor()
+	# Create table user(name, email, password)
 	cursor.execute(
 		"""
 			create table if not exists user(
@@ -34,7 +29,40 @@ def Init():
 					password text,
 					primary key(name)
 			)
-		""")
+		"""
+	)
+	# Create table board(board_name, moderator)
+	cursor.execute(
+		"""
+			create table if not exists board(
+				board_name text,
+				moderator text,
+				primary key(board_name)
+			)
+		"""
+	)
+	# Create table post(id, board_name, title, content, author)
+	cursor.execute(
+		"""
+			create table if not exists post(
+				id integer primary key autoincrement,
+				board_name text,
+				title text,
+				content text,
+				author text
+			)
+		"""
+	)
+	# Create table comment(post_id, comment, commenter)
+	cursor.execute(
+		"""
+			create table if not exists comment(
+				post_id integer,
+				comment text,
+				commenter text
+			)
+		"""
+	)
 	
 
 def HandleClient():
@@ -47,7 +75,7 @@ def HandleClient():
 		threads.start()
 
 def CheckUserExist(name):
-	cursor.execute(""" select * from user where name = ? """, (name,))
+	cursor.execute(" select * from user where name = ? ", (name,))
 	tmp = cursor.fetchall()
 	if tmp != []:
 		return True
@@ -56,10 +84,23 @@ def CheckUserExist(name):
 
 def CreateUser(name, email, passwd):
 	cursor.execute(" insert into user(name, email, password) values(?, ?, ?) ", (name, email, passwd))
+	dbconn.commit()
 
 def GetUser(name):
 	cursor.execute(" select * from user where name = ? ", (name,))
 	return cursor.fetchone()
+
+def CheckBoardExist(board_name):
+	cursor.execute("select * from board where board_name = ?", (board_name,))
+	tmp = cursor.fetchall()
+	if tmp != []:
+		return True
+	else:
+		return False
+
+def CreateBoard(board_name, moderator):
+	cursor.execute("insert into board(board_name, moderator) values(?, ?)", (board_name, moderator))
+	dbconn.commit()
 
 def HandleCommand(conn, cmd, login_status, login_user):
 	msg = None
@@ -67,7 +108,6 @@ def HandleCommand(conn, cmd, login_status, login_user):
 		if len(cmd) != 4:
 			msg = 'Usage: register <username> <email> <password>\n'
 		else:
-			# 參數數量正確，檢查username
 			if CheckUserExist(cmd[1]):
 				msg = 'Username is already used.\n'
 			else:
@@ -118,6 +158,21 @@ def HandleCommand(conn, cmd, login_status, login_user):
 				msg = 'Bye, ' + login_user + '.\n'
 				login_user = None
 				login_status = False
+		conn.sendall(msg.encode())
+		return login_status, login_user, False
+
+	elif cmd[0] == 'create-board':
+		if len(cmd) != 2:
+			msg = 'Usage: create-board <name>\n'
+		else:
+			if login_status == False:
+				msg = 'Please login first.\n'
+			else:
+				if CheckBoardExist(cmd[1]):
+					msg = 'Board is already exist.\n'
+				else:
+					CreateBoard(cmd[1], login_user)
+					msg = 'Create board successfully.\n'
 		conn.sendall(msg.encode())
 		return login_status, login_user, False
 
