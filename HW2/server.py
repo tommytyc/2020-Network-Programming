@@ -223,7 +223,7 @@ def HandleCommand(conn, cmd, cmd_orig, login_status, login_user):
 				msg = 'Please login first.\n'
 			else:
 				if CheckBoardExist(cmd[1]):
-					msg = 'Board is already exist.\n'
+					msg = 'Board already exists.\n'
 				else:
 					CreateBoard(cmd[1], login_user)
 					msg = 'Create board successfully.\n'
@@ -269,7 +269,7 @@ def HandleCommand(conn, cmd, cmd_orig, login_status, login_user):
 						CreatePost(cmd[1], cmd_orig[cmd_orig_title + 8 : cmd_orig_content].strip(), cmd_orig[cmd_orig_content + 10 :].strip(), login_user, today)
 						msg = 'Create post successfully.\n'
 					else:
-						msg = 'Board is not exist.\n'
+						msg = 'Board does not exist.\n'
 			else:
 				msg = 'Usage: create-post <board-name> --title <title> --content <content>\n'
 		Write(conn, msg)
@@ -286,7 +286,7 @@ def HandleCommand(conn, cmd, cmd_orig, login_status, login_user):
 					day = post[3].split('-', -1)
 					msg += str(post[0]) + '\t' + post[1] + '\t' + post[2] + '\t' + day[1] + '/' + day[2] + '\n'
 			else:
-				msg = 'Board is not exist.\n'
+				msg = 'Board does not exist.\n'
 		elif len(cmd) == 3:
 			if CheckBoardExist(cmd[1]):
 				msg = 'ID\tTitle\tAuthor\tDate\n'
@@ -317,7 +317,7 @@ def HandleCommand(conn, cmd, cmd_orig, login_status, login_user):
 					for comment in comment_list:
 						msg += comment[0] + ': ' + str(comment[1]).replace('<br>', '\n\t') + '\n'
 			else:
-				msg = 'Post is not exist.\n'
+				msg = 'Post does not exist.\n'
 		Write(conn, msg)
 		return login_status, login_user, False
 
@@ -338,7 +338,7 @@ def HandleCommand(conn, cmd, cmd_orig, login_status, login_user):
 					else:
 						msg = 'Not the post owner.\n'
 				else:
-					msg = 'Post is not exist.\n'
+					msg = 'Post does not exist.\n'
 			Write(conn, msg)
 			return login_status, login_user, False
 
@@ -364,7 +364,7 @@ def HandleCommand(conn, cmd, cmd_orig, login_status, login_user):
 					else:
 						msg = 'Not the post owner.\n'
 				else:
-					msg = 'Post is not exist.\n'
+					msg = 'Post does not exist.\n'
 		Write(conn, msg)
 		return login_status, login_user, False
 
@@ -381,7 +381,7 @@ def HandleCommand(conn, cmd, cmd_orig, login_status, login_user):
 					CreateComment(post_id, cmd_orig[cmd_orig_post_id + len(cmd[1]):].strip(), login_user)
 					msg = 'Comment successfully.\n'
 				else:
-					msg = 'Post is not exist.\n'
+					msg = 'Post does not exist.\n'
 		Write(conn, msg)
 		return login_status, login_user, False
 
