@@ -339,8 +339,8 @@ def HandleCommand(conn, cmd, cmd_orig, login_status, login_user):
 						msg = 'Not the post owner.\n'
 				else:
 					msg = 'Post does not exist.\n'
-			Write(conn, msg)
-			return login_status, login_user, False
+		Write(conn, msg)
+		return login_status, login_user, False
 
 	elif cmd[0] == 'update-post':
 		if login_status == False:
