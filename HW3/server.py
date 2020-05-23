@@ -55,6 +55,17 @@ def Init():
 			)
 		"""
 	)
+	# Create table mail(receiver, sender, subject, date)
+	cursor.execute(
+		"""
+			create table if not exists mail(
+				receiver text,
+				sender text,
+				subject text,
+				date text
+			)
+		"""
+	)
 	# Create table comment(post_id, comment, commenter)
 	cursor.execute(
 		"""
@@ -114,6 +125,18 @@ def CreatePost(board_name, title, author, date):
 	cursor.execute(" insert into post(board_name, title, author, date) values(?, ? ,?, ?) ", (board_name, title, author, date))
 	dbconn.commit()
 
+def CreateMail(receiver, sender, subject, date):
+	cursor.execute(" insert into mail(receiver, sender, subject, date) values(?, ? ,?, ?) ", (receiver, sender, subject, date))
+	dbconn.commit()
+
+def GetUserMailCount(user):
+	cursor.execute(" select count(*) from mail where receiver = ? ", (user,))
+	return cursor.fetchone()
+
+def GetUserMailList(user):
+	cursor.execute(" select * from mail where receiver = ? ", (user,))
+	return cursor.fetchall()
+
 def GetPostList(board_name):
 	cursor.execute(" select id, title, author, date from post where board_name = ? ", (board_name,))
 	return cursor.fetchall()
@@ -133,6 +156,10 @@ def CheckPostExist(post_id):
 def DeletePost(post_id):
 	cursor.execute(" delete from post where id = ? ", (post_id,))
 	cursor.execute(" delete from comment where post_id = ? ", (post_id,))
+	dbconn.commit()
+
+def DeleteMail(user, subject):
+	cursor.execute(" delete from mail where receiver = ? and subject = ?", (user, subject))
 	dbconn.commit()
 
 def UpdatePostTitle(post_id, message):
@@ -170,20 +197,17 @@ def HandleServerCommand(conn, cmd, cmd_orig, login_status, login_user):
 
 	elif cmd[0] == 'login':
 		if login_status == True:
-			msg = 'Please logout first.\n'
+			msg = '2'
 		else: 
 			if CheckUserExist(cmd[1]):
 				user = GetUser(cmd[1])
 				if cmd[2] == user[2]:
 					login_status = True
 					login_user = cmd[1]
-					# msg = 'Welcome, ' + cmd[1] + '.\n'
 					msg = '0'
 				else:
-					# msg = 'Login failed.\n'
 					msg = '1'
 			else:
-				# msg = 'Login failed.\n'
 				msg = '1'
 		Write(conn, msg)
 		return login_status, login_user, False
@@ -253,26 +277,21 @@ def HandleServerCommand(conn, cmd, cmd_orig, login_status, login_user):
 
 	elif cmd[0] == 'create-post':
 		if login_status == False:
-			msg = 'Please login first.\n'
+			msg = '1'
 		else:
 			cmd_orig_title = cmd_orig.find('--title')
 			cmd_orig_content = cmd_orig.find('--content')
 			if '--title' in cmd and '--content' in cmd and cmd.index('--title') < cmd.index('--content') and cmd[2] == '--title':
 				if login_status == False:
-					# msg = 'Please login first.\n'
 					msg = '1'
 				else:
 					if CheckBoardExist(cmd[1]):
 						today = str(date.today())
-						# CreatePost(cmd[1], cmd_orig[cmd_orig_title + 8 : cmd_orig_content].strip(), cmd_orig[cmd_orig_content + 10 :].strip(), login_user, today)
 						CreatePost(cmd[1], cmd_orig[cmd_orig_title + 8 : cmd_orig_content].strip(), login_user, today)
-						# msg = 'Create post successfully.\n'
 						msg = '0'
 					else:
-						# msg = 'Board does not exist.\n'
 						msg = '2'
 			else:
-				# msg = 'Usage: create-post <board-name> --title <title> --content <content>\n'
 				msg = '3'
 		Write(conn, msg)
 		return login_status, login_user, False
@@ -376,6 +395,78 @@ def HandleServerCommand(conn, cmd, cmd_orig, login_status, login_user):
 			else:
 				msg = '2'
 		Write(conn, msg)
+		return login_status, login_user, False
+
+	elif cmd[0] == 'mail-to':
+		if login_status == False:
+			msg = '1'
+		else:
+			cmd_orig_title = cmd_orig.find('--subject')
+			cmd_orig_content = cmd_orig.find('--content')
+			if '--subject' in cmd and '--content' in cmd and cmd.index('--subject') < cmd.index('--content') and cmd[2] == '--subject':
+				if login_status == False:
+					msg = '1'
+				else:
+					if CheckUserExist(cmd[1]):
+						today = str(date.today())
+						CreateMail(cmd[1], login_user, cmd_orig[cmd_orig_title + 10 : cmd_orig_content].strip(), today)
+						mail_count = GetUserMailCount(cmd[1])
+						msg = '0'
+						msg += 'tommytyc' + str(mail_count[0])
+					else:
+						msg = '2'
+			else:
+				msg = '3'
+		Write(conn, msg)
+		return login_status, login_user, False
+
+	elif cmd[0] == 'list-mail':
+		if login_status == False:
+			msg = '1'
+		else:
+			mail_list = GetUserMailList(login_user)
+			msg = 'ID\tSubject\tFrom\tDate\n'
+			mail_id = 0
+			for mail in mail_list:
+				mail_id += 1
+				day = mail[3].split('-', -1)
+				msg += str(mail_id) + '\t' + mail[2] + '\t' + mail[1] + '\t' + day[1] + '/' + day[2] + '\n'
+		Write(conn, msg)
+		return login_status, login_user, False
+
+	elif cmd[0] == 'retr-mail':
+		if login_status == False:
+			msg = '1'
+			Write(conn, msg)
+		else:	
+			mail_list = GetUserMailList(login_user)
+			if int(cmd[1]) > len(mail_list) or int(cmd[1]) < 1:
+				msg = '2'
+				Write(conn, msg)
+			else:
+				mail_num = int(cmd[1]) - 1
+				msg = 'Subject\t:'
+				msg += mail_list[mail_num][2] + '\nFrom\t:' + mail_list[mail_num][1] + '\nDate\t:' + mail_list[mail_num][3] + '\n--\n'
+				tmp = '0'
+				tmp += 'tommytyc' + msg + 'tommytyc' + mail_list[mail_num][2]
+				Write(conn, tmp)
+		return login_status, login_user, False
+
+	elif cmd[0] == 'delete-mail':
+		if login_status == False:
+			msg = '1'
+			Write(conn, msg)
+		else:
+			mail_list = GetUserMailList(login_user)
+			if int(cmd[1]) > len(mail_list) or int(cmd[1]) < 1:
+				msg = '2'
+				Write(conn, msg)
+			else:
+				mail_num = int(cmd[1]) - 1
+				DeleteMail(login_user, mail_list[mail_num][2])
+				msg = '0'
+				msg += 'tommytyc' + mail_list[mail_num][2]
+				Write(conn, msg)
 		return login_status, login_user, False
 
 	elif cmd[0] == 'exit':

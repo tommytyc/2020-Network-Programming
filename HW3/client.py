@@ -66,6 +66,8 @@ def HandleClientCommand(conn, cmd_orig, cmd):
 				data = CommunicateWithServer(conn, cmd_orig)
 				if data.decode().strip() == '1':
 					print('Login failed.')
+				elif data.decode().strip() == '2':
+					print('Please logout first.')
 				else:
 					login_user = cmd[1]
 					print('Welcome, ' + cmd[1] + '.')
@@ -86,7 +88,7 @@ def HandleClientCommand(conn, cmd_orig, cmd):
 				post_title = cmd_orig[cmd_orig_title + 8 : cmd_orig_content].strip()
 				file_name = cmd[1] + '_' + post_title
 				print(post_content + '\n--', file = open(file_name, 'w'))
-				CreateUserContent(file_name, login_user)
+				CreateUserObject(file_name, login_user)
 				print('Create post successfully.')
 				os.remove(file_name)
 			return False
@@ -134,7 +136,7 @@ def HandleClientCommand(conn, cmd_orig, cmd):
 					assert len(data) == 4
 					DeleteBucketContentComment(data[1], data[2], data[3])
 					print('Delete successfully.')
-				return False
+			return False
 
 		elif cmd[0] == 'update-post':
 			if len(cmd) < 4 or (cmd[2] != '--title' and cmd[2] != '--content'):
@@ -164,7 +166,7 @@ def HandleClientCommand(conn, cmd_orig, cmd):
 						new_content += '\n--'
 					file_name = board_name + '_' + new_title
 					print(new_content, file = open(file_name, 'w'))
-					CreateUserContent(file_name, login_user)
+					CreateUserObject(file_name, login_user)
 					os.remove(file_name)
 					print('Update successfully.')
 			return False
@@ -192,10 +194,77 @@ def HandleClientCommand(conn, cmd_orig, cmd):
 						pass
 					comment += login_user + ': ' + cmd_orig[cmd_orig_post_id + len(cmd[1]):].strip()
 					print(comment, file = open(file_name, 'w')) 
-					CreateUserComment(file_name, author)
+					CreateUserObject(file_name, author)
 					os.remove(file_name)
 					print('Comment successfully.')
 			return False
+
+		elif cmd[0] == 'mail-to':
+			data = CommunicateWithServer(conn, cmd_orig)
+			data = data.decode().strip().split('tommytyc', -1)
+			if data[0] == '1':
+				print('Please login first.')
+			elif data[0] == '2':
+				print(cmd[1] + ' does not exist.')
+			elif data[0] == '3':
+				print('Usage: mail-to <username> --subject <subject> --content <content>')
+			else:
+				# mail_count = int(data[1])
+				cmd_orig_subject = cmd_orig.find('--subject')
+				cmd_orig_content = cmd_orig.find('--content')
+				mail_content = cmd_orig[cmd_orig_content + 10 :].strip()
+				mail_subject = cmd_orig[cmd_orig_subject + 10 : cmd_orig_content].strip().replace(' ', '_')
+				file_name = 'mail_' + mail_subject
+				print(mail_content + '\n--', file = open(file_name, 'w'))
+				CreateUserObject(file_name, cmd[1])
+				print('Sent successfully.')
+				os.remove(file_name)
+			return False
+
+		elif cmd[0] == 'list-mail':
+			if len(cmd) != 1:
+				print('Usage: list-mail')
+			else:
+				data = CommunicateWithServer(conn, cmd_orig)
+				data = data.decode().strip()
+				if data == '1':
+					print('Please login first.')
+				else:
+					print(data)
+				return False
+
+		elif cmd[0] == 'retr-mail':
+			if len(cmd) != 2:
+				print('Usage: retr-mail <mail#>')
+			else:
+				data = CommunicateWithServer(conn, cmd_orig)
+				data = data.decode().strip().split('tommytyc', -1)
+				if data[0] == '1':
+					print('Please login first.')
+				elif data[0] == '2':
+					print('No such mail.')
+				else:
+					content = str(GetBucketMail(login_user, data[2].replace(' ', '_'))).replace('<br>', '\n')
+					msg = data[1]
+					print(msg)
+					print(content)
+			return False
+
+		elif cmd[0] == 'delete-mail':
+			if len(cmd) != 2:
+				print('Usage: delete-mail <mail#>')
+			else:
+				data = CommunicateWithServer(conn, cmd_orig)
+				data = data.decode().strip().split('tommytyc', -1)
+				if data[0] == '1':
+					print('Please login first.')
+				elif data[0] == '2':
+					print('No such mail.')
+				else:
+					subject = data[1].replace(' ', '_')
+					DeleteBuckeMail(login_user, subject)
+					print('Mail deleted.')
+
 
 def GetBucketContent(username, objectkey, board_name):
 	objectkey = board_name + '_' + objectkey
@@ -207,13 +276,22 @@ def GetBucketContent(username, objectkey, board_name):
 	return content
 
 def GetBucketComment(username, objectkey, board_name):
-	objectkey = 'comment' + '_' + board_name + '_' + objectkey
+	objectkey = 'comment_' + board_name + '_' + objectkey
 	bucket_name = TurnIntoBucketName(username)
 	s3 = boto3.resource('s3')
 	bucket = s3.Bucket(bucket_name)
 	target_object = bucket.Object(objectkey)
 	comment = target_object.get()['Body'].read().decode()
 	return comment
+
+def GetBucketMail(username, objectkey):
+	objectkey = 'mail_' + objectkey
+	bucket_name = TurnIntoBucketName(username)
+	s3 = boto3.resource('s3')
+	bucket = s3.Bucket(bucket_name)
+	target_object = bucket.Object(objectkey)
+	content = target_object.get()['Body'].read().decode()
+	return content
 
 def DeleteBucketContentComment(username, objectkey, board_name):
 	objectkey = board_name + '_' + objectkey
@@ -227,6 +305,14 @@ def DeleteBucketContentComment(username, objectkey, board_name):
 		comment_object.delete()
 	except:
 		pass
+
+def DeleteBuckeMail(username, objectkey):
+	objectkey = 'mail_' + objectkey
+	bucket_name = TurnIntoBucketName(username)
+	s3 = boto3.resource('s3')
+	bucket = s3.Bucket(bucket_name)
+	target_object = bucket.Object(objectkey)
+	target_object.delete()
 
 def CommunicateWithServer(conn, cmd):
 	conn.sendall(cmd.encode())
@@ -244,13 +330,7 @@ def CreateUserBucket(username):
 	s3 = boto3.resource('s3')
 	s3.create_bucket(Bucket = bucket_name)
 
-def CreateUserContent(objectkey, username):
-	bucket_name = TurnIntoBucketName(username)
-	s3 = boto3.resource('s3')
-	bucket = s3.Bucket(bucket_name)
-	bucket.upload_file(objectkey, objectkey)
-
-def CreateUserComment(objectkey, username):
+def CreateUserObject(objectkey, username):
 	bucket_name = TurnIntoBucketName(username)
 	s3 = boto3.resource('s3')
 	bucket = s3.Bucket(bucket_name)
