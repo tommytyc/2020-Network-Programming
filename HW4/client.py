@@ -58,6 +58,7 @@ def AddUserSub(user, sub_type, channel, key_word):
 	global UserSub_list
 	global UserSub_dict
 	idx = UserSub_dict.get(user, None)
+	flag = True
 	if idx == None:
 		new_usersub = UserSub(user)
 		new_usersub.AddSub(sub_type, channel, key_word)
@@ -67,8 +68,11 @@ def AddUserSub(user, sub_type, channel, key_word):
 	else:
 		if UserSub_list[idx].CheckSubOrNot(sub_type, channel, key_word):
 			print('Already subscribed.')
+			flag = False
 		else:
 			UserSub_list[idx].AddSub(sub_type, channel, key_word)
+	if flag:
+		print('Subscribe successfully.')
 	t = threading.Thread(target = ListenChannel, args = (UserSub_list[idx], channel, key_word))
 	t.start()
 
@@ -374,7 +378,6 @@ def HandleClientCommand(conn, cmd_orig, cmd):
 					return False
 				if '--'+sub_type in cmd and '--keyword' in cmd and cmd.index('--'+sub_type) < cmd.index('--keyword') and cmd[1] == '--'+sub_type:
 					AddUserSub(login_user, sub_type, cmd_orig[idx + offset : cmd_orig_keyword].strip(), cmd_orig[cmd_orig_keyword + 10 :])
-					print('Subscribe successfully.')
 
 			return False
 
