@@ -185,11 +185,9 @@ def HandleServerCommand(conn, cmd, cmd_orig, login_status, login_user):
 	msg = None
 	if cmd[0] == 'register':
 		if CheckUserExist(cmd[1]):
-			# msg = 'Username is already used.\n'
 			msg = '1'
 		else:
 			CreateUser(cmd[1], cmd[2], cmd[3])
-			# msg = 'Register successfully.\n'
 			msg = '0'
 		Write(conn, msg)
 		return login_status, login_user, False
